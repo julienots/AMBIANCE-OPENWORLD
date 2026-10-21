@@ -11,12 +11,14 @@ func _ready() -> void:
 	frame.position.y = 0.5
 	add_child(frame)
 	_grate = Interactable.box_mesh(Vector3(1.2, 0.8, 0.06), Color(0.32, 0.34, 0.37))
+	_grate.set_meta("dynamic", true)
 	_grate.position = Vector3(0, 0.5, -0.08)
 	add_child(_grate)
 	for i in 5:
 		var bar := Interactable.box_mesh(Vector3(1.15, 0.04, 0.08), Color(0.08, 0.08, 0.1))
 		bar.position = Vector3(0, 0.2 + i * 0.15, -0.12)
 		add_child(bar)
+	Interactable.merge_static(self)
 
 
 func exit_position() -> Vector3:

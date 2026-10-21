@@ -16,6 +16,7 @@ func _build() -> void:
 			add_child(body)
 			_door = box_mesh(Vector3(0.86, 2.0, 0.05), Color(0.42, 0.5, 0.53))
 			_door.position = Vector3(0, 1.05, -0.37)
+			_door.set_meta("dynamic", true)
 			add_child(_door)
 			for i in 4:
 				var slot := box_mesh(Vector3(0.5, 0.04, 0.06), Color(0.08, 0.08, 0.1))

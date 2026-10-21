@@ -106,6 +106,15 @@ static func hbox(sep := 10) -> HBoxContainer:
 	return h
 
 
+static func flow(sep := 8) -> HFlowContainer:
+	## Row that wraps its children onto new lines on narrow screens.
+	var f := HFlowContainer.new()
+	f.add_theme_constant_override("h_separation", sep)
+	f.add_theme_constant_override("v_separation", sep)
+	f.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return f
+
+
 static func scroll(child: Control) -> ScrollContainer:
 	var s := ScrollContainer.new()
 	s.size_flags_vertical = Control.SIZE_EXPAND_FILL

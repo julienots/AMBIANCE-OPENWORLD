@@ -95,7 +95,9 @@ func _ready() -> void:
 	model = (load(data.model) as PackedScene).instantiate()
 	model.scale = Vector3.ONE * float(data.get("scale", 1.0))
 	root.add_child(model)
-	mats = Mats.apply(model, true, true)
+	mats = Mats.apply(model, true, true, int(Settings.get_v("quality", 1)) >= 2 or boss or id == "devourer")
+	for mi in Mats.find_meshes(model):
+		mi.visibility_range_end = 150.0 if boss or id == "devourer" else 75.0
 	anim = model.find_child("AnimationPlayer", true, false)
 	if anim:
 		for n in LOOPING:

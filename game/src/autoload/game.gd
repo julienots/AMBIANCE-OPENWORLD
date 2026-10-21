@@ -555,8 +555,14 @@ func _check_mission_done(id: String) -> void:
 	save_game()
 
 
+func region_built(id: String) -> bool:
+	return ResourceLoader.exists(DB.REGIONS[id].builder)
+
+
 func region_unlocked(id: String) -> bool:
 	var r: Dictionary = DB.REGIONS[id]
+	if not region_built(id):
+		return false
 	if player_level() < int(r.min_level):
 		return false
 	if r.has("requires") and mission_state(r.requires).get("status", "") != "done":
@@ -569,6 +575,8 @@ func region_unlocked(id: String) -> bool:
 
 func region_lock_reason(id: String) -> String:
 	var r: Dictionary = DB.REGIONS[id]
+	if not region_built(id):
+		return "Région en construction (prochaine version)"
 	if player_level() < int(r.min_level):
 		return "Niveau %d requis" % int(r.min_level)
 	if r.has("requires") and not region_unlocked(id):

@@ -30,6 +30,18 @@ static func toon(color: Color, emission := 0.0, opts := {}) -> ShaderMaterial:
 	return m
 
 
+static var _prop_vc: ShaderMaterial
+
+
+static func prop_vc() -> ShaderMaterial:
+	## Shared toon material for merged props (colour comes from vertex colours).
+	if _prop_vc == null:
+		_prop_vc = toon(Color.WHITE, 0.0, {"use_vertex_color": true, "rim_amount": 0.2})
+		if outline_enabled:
+			_prop_vc.next_pass = outline_material()
+	return _prop_vc
+
+
 static func symbiote(opts := {}) -> ShaderMaterial:
 	var m := ShaderMaterial.new()
 	m.shader = SYMBIOTE

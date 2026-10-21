@@ -7,3 +7,4 @@ build/
 tools/apksigner/build/
 __pycache__/
 *.pyc
+dist/*.apk

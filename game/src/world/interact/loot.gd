@@ -21,6 +21,7 @@ func _build() -> void:
 			add_child(b)
 			_lid = box_mesh(Vector3(1.04, 0.12, 0.74), Color(0.9, 0.7, 0.15))
 			_lid.position.y = 0.66
+			_lid.set_meta("dynamic", true)
 			add_child(_lid)
 			var beacon := box_mesh(Vector3(0.12, 0.12, 0.12), Color(0.3, 1.0, 0.5), 3.0 if enabled else 0.0)
 			beacon.position = Vector3(0.35, 0.78, 0)
@@ -31,6 +32,7 @@ func _build() -> void:
 			add_child(b)
 			_lid = box_mesh(Vector3(0.95, 0.1, 0.95), Color(0.36, 0.26, 0.16))
 			_lid.position.y = 0.75
+			_lid.set_meta("dynamic", true)
 			add_child(_lid)
 	static_box(self, Vector3(0.95, 0.8, 0.95), Vector3(0, 0.4, 0), "metal")
 	if not enabled and _lid:

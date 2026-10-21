@@ -90,6 +90,7 @@ func _index_sfx() -> void:
 			if not _variants.has(base):
 				_variants[base] = []
 			_variants[base].append(st)
+	print("[audio] %d sound groups indexed" % _variants.size())
 
 
 func _list(dir: String) -> PackedStringArray:

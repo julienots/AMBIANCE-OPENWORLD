@@ -137,6 +137,7 @@ func configure_env(c: Dictionary) -> void:
 	env.fog_sky_affect = c.get("fog_sky", 0.6)
 	env.ambient_light_color = c.get("ambient", Color(0.3, 0.3, 0.42))
 	env.ambient_light_energy = c.get("ambient_energy", 0.6)
+	env.tonemap_exposure = c.get("exposure", 1.15)
 	if c.get("no_sky", false):
 		env.background_mode = Environment.BG_COLOR
 		env.background_color = c.get("fog_color", Color.BLACK)

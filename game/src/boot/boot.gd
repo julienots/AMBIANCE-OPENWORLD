@@ -20,9 +20,24 @@ func _ready() -> void:
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 	await get_tree().process_frame
+	var auto := ""
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("autotest="):
+			auto = a.substr(9)
+	if auto != "":
+		_skip = true
+		await _autotest(auto)
+		return
 	await _studio_logo()
 	await _title_and_preload()
 	get_tree().change_scene_to_file("res://src/menu/main_menu.tscn")
+
+
+func _autotest(region: String) -> void:
+	## Smoke test for exported builds, run by a node that survives the scene change.
+	var runner: Node = load("res://src/boot/autotest.gd").new()
+	runner.region = region
+	get_tree().root.add_child(runner)
 
 
 func _input(event: InputEvent) -> void:
@@ -43,7 +58,6 @@ func _studio_logo() -> void:
 	logo.texture = tex
 	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	logo.set_anchors_preset(Control.PRESET_CENTER)
 	var w := minf(get_viewport_rect().size.x * 0.62, 1000.0)
 	logo.size = Vector2(w, w * tex.get_height() / tex.get_width())
 	logo.position = get_viewport_rect().size / 2 - logo.size / 2

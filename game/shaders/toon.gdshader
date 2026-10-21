@@ -20,6 +20,7 @@ uniform vec4 power_color : source_color = vec4(0.3, 0.9, 1.0, 1.0);
 uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
 uniform float hue_shift = 0.0;      // skins
 uniform float skin_dark = 0.0;
+uniform bool use_vertex_color = false;  // merged props carry their colour per vertex
 
 vec3 hue_rotate(vec3 c, float a) {
 	const vec3 k = vec3(0.57735);
@@ -43,6 +44,9 @@ void fragment() {
 	}
 	vec3 base = hue_shift != 0.0 ? clamp(hue_rotate(albedo.rgb, hue_shift), 0.0, 1.0) : albedo.rgb;
 	base = mix(base, base * 0.35, skin_dark);
+	if (use_vertex_color) {
+		base *= COLOR.rgb;
+	}
 	ALBEDO = base;
 	ROUGHNESS = 1.0;
 	SPECULAR = 0.0;

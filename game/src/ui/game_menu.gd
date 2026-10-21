@@ -199,7 +199,7 @@ func _heroes() -> void:
 	_content.add_child(h)
 	# Card list
 	var list := UiKit.vbox(6)
-	list.custom_minimum_size = Vector2(250, 0)
+	list.custom_minimum_size = Vector2(210, 0)
 	var ids := DB.HEROES.keys()
 	ids.sort_custom(func(a, b): return DB.RARITIES[DB.HEROES[a].rarity].order < DB.RARITIES[DB.HEROES[b].rarity].order)
 	for id in ids:
@@ -211,12 +211,12 @@ func _heroes() -> void:
 		b.add_theme_stylebox_override("normal", sb)
 		list.add_child(b)
 	var ls := UiKit.scroll(list)
-	ls.custom_minimum_size = Vector2(260, 0)
+	ls.custom_minimum_size = Vector2(220, 0)
 	ls.size_flags_horizontal = Control.SIZE_FILL
 	h.add_child(ls)
 	var d: Dictionary = DB.HEROES[_sel_hero]
 	var st := Game.hero_state(_sel_hero)
-	_preview = HeroPreview.new(Vector2(330, 470))
+	_preview = HeroPreview.new(Vector2(280, 470))
 	h.add_child(_preview)
 	_preview.show_model(d.model, d.color)
 	var info := UiKit.vbox(8)
@@ -238,7 +238,7 @@ func _heroes() -> void:
 	info.add_child(_ability_row(d.ultimate.kind, "ULTIME : " + d.ultimate.name, d.ultimate.desc))
 	info.add_child(_ability_row("regen", "Passif : " + d.passive.name, d.passive.desc))
 	if st.owned:
-		var row := UiKit.hbox()
+		var row := UiKit.flow()
 		if _sel_hero != Game.profile.active_hero:
 			var can_switch := _at_refuge
 			row.add_child(UiKit.button("Jouer ce héros" if can_switch else "Changer au refuge / base", func(): _set_active(_sel_hero), 54, can_switch))
@@ -248,33 +248,32 @@ func _heroes() -> void:
 		row.add_child(UiKit.cost_label(rcost))
 		info.add_child(row)
 		info.add_child(UiKit.title("Arbre de compétences", 20, Color.WHITE))
-		var grid := GridContainer.new()
-		grid.columns = 3
-		grid.add_theme_constant_override("h_separation", 8)
-		grid.add_theme_constant_override("v_separation", 8)
-		for tier in range(1, 5):
-			for branch in ["Puissance", "Survie", "Pouvoirs"]:
-				for s in DB.SKILLS:
-					if s.branch == branch and s.tier == tier:
-						var learned: bool = s.id in st.skills
-						var b := UiKit.button(("✔ " if learned else "") + s.name + "\n" + s.desc, func(): Game.learn(_sel_hero, s.id); _refresh(), 64, Game.can_learn(_sel_hero, s.id) or learned)
-						b.custom_minimum_size = Vector2(230, 64)
-						b.add_theme_font_size_override("font_size", 15)
-						if learned:
-							b.add_theme_stylebox_override("normal", UiKit._sb(Color(0.15, 0.3, 0.15), Color(0.4, 1, 0.5)))
-						grid.add_child(b)
-		info.add_child(grid)
+		for branch in ["Puissance", "Survie", "Pouvoirs"]:
+			info.add_child(UiKit.text(branch, 16, UiKit.ACCENT))
+			for s in DB.SKILLS:
+				if s.branch != branch:
+					continue
+				var learned: bool = s.id in st.skills
+				var row3 := UiKit.hbox(8)
+				var b := UiKit.button("✔" if learned else "Apprendre", func(): Game.learn(_sel_hero, s.id); _refresh(), 46, Game.can_learn(_sel_hero, s.id))
+				b.custom_minimum_size = Vector2(130, 46)
+				if learned:
+					b.add_theme_stylebox_override("disabled", UiKit._sb(Color(0.15, 0.3, 0.15), Color(0.4, 1, 0.5)))
+					b.disabled = true
+				row3.add_child(b)
+				row3.add_child(UiKit.text("%d. %s — %s" % [s.tier, s.name, s.desc], 15, Color(0.6, 1, 0.65) if learned else Color(0.88, 0.88, 0.94)))
+				info.add_child(row3)
 		info.add_child(UiKit.title("Équipement", 20, Color.WHITE))
 		for slot in ["arme", "armure", "gadget"]:
 			var eq: String = st.equipment.get(slot, "")
-			var row2 := UiKit.hbox()
+			var row2 := UiKit.flow()
 			row2.add_child(UiKit.text("%s : %s" % [slot.capitalize(), DB.EQUIPMENT[eq].name if eq != "" else "—"], 16))
 			for owned_eq in Game.profile.equipment_owned:
 				if DB.EQUIPMENT[owned_eq].slot == slot:
 					row2.add_child(UiKit.button(("Retirer " if eq == owned_eq else "Équiper ") + DB.EQUIPMENT[owned_eq].name, func(): Game.equip(_sel_hero, owned_eq); _apply_player_stats(); _refresh(), 46))
 			info.add_child(row2)
 		info.add_child(UiKit.title("Apparences", 20, Color.WHITE))
-		var srow := UiKit.hbox()
+		var srow := UiKit.flow()
 		for sk in [["default", "Classique", 1], ["eclipse", "Éclipse", 3], ["prisme", "Prisme", 5]]:
 			var unlocked := int(st.rank) >= int(sk[2])
 			srow.add_child(UiKit.button(("✔ " if st.skin == sk[0] else "") + sk[1] + ("" if unlocked else " (rang %d)" % sk[2]), func(): st.skin = sk[0]; _apply_player_stats(); _refresh(), 46, unlocked))

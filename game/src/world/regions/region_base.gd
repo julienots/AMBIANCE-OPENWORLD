@@ -49,8 +49,8 @@ func add(node: Node3D, pos: Vector3, rot_y := 0.0) -> Node3D:
 # ------------------------------------------------------------------------------ materials
 
 func base_materials() -> void:
-	geo.env_mat("ground_asphalt", Color(0.17, 0.17, 0.2), Color(0.12, 0.12, 0.15), {"noise_scale": 0.08, "grit": 0.8})
-	geo.env_mat("ground_sidewalk", Color(0.36, 0.35, 0.38), Color(0.3, 0.29, 0.32), {"noise_scale": 0.2})
+	geo.env_mat("ground_asphalt", Color(0.32, 0.32, 0.37), Color(0.26, 0.26, 0.3), {"noise_scale": 0.08, "grit": 0.8})
+	geo.env_mat("ground_sidewalk", Color(0.52, 0.5, 0.54), Color(0.44, 0.42, 0.46), {"noise_scale": 0.2})
 	geo.env_mat("ground_dirt", Color(0.22, 0.18, 0.14), Color(0.16, 0.13, 0.1), {"noise_scale": 0.1, "grit": 0.9})
 	geo.env_mat("ground_grass", Color(0.16, 0.22, 0.13), Color(0.12, 0.17, 0.1), {"noise_scale": 0.06})
 	geo.env_mat("ground_goo", Color(0.05, 0.03, 0.06), Color(0.08, 0.04, 0.08), {"corruption": 1.0, "noise_scale": 0.12})

@@ -5,9 +5,10 @@ extends RefCounted
 ## StaticBody3D per tile (group "navsource" for navmesh baking). Tiles get a visibility
 ## range so distant geometry is culled (draw distance setting).
 
-const TILE := 48.0
+const TILE := 64.0
 
-var materials := {}          # key -> Material
+var materials := {}          # family key -> Material
+var palette := {}            # legacy material key -> {family, tint}
 var _st := {}                # "tx,tz|mat" -> SurfaceTool
 var _bodies := {}            # "tx,tz|surface" -> StaticBody3D
 var root: Node3D
@@ -25,16 +26,34 @@ func define(key: String, mat: Material) -> void:
 	materials[key] = mat
 
 
-func env_mat(key: String, c1: Color, c2: Color, opts := {}) -> ShaderMaterial:
-	var m := ShaderMaterial.new()
-	m.shader = preload("res://shaders/env.gdshader")
-	m.set_shader_parameter("albedo", c1)
-	m.set_shader_parameter("albedo2", c2)
-	m.set_shader_parameter("noise_tex", Mats.NOISE)
-	for k in opts:
-		m.set_shader_parameter(k, opts[k])
-	materials[key] = m
-	return m
+func env_mat(key: String, c1: Color, _c2: Color, opts := {}) -> ShaderMaterial:
+	## Registers a colour under `key`. Colours sharing the same shading options are batched
+	## into one material "family"; the colour travels in the vertex colours. This keeps the
+	## whole region down to a handful of draw calls per tile.
+	var fam := "solid"
+	var corrupt := float(opts.get("corruption", 0.0)) > 0.0
+	if opts.get("windows", 0.0) > 0.0:
+		fam = "bld_corrupt" if corrupt else "bld"
+	elif corrupt:
+		fam = "goo"
+	elif float(opts.get("emission_energy", 0.0)) > 0.0:
+		fam = "glow"
+	elif key.begins_with("ground"):
+		fam = "ground"
+	elif float(opts.get("specular_amount", 0.0)) > 0.0:
+		fam = "spec"
+	# Albedo uniforms were sRGB (source_color); vertex colours are linear.
+	palette[key] = {"family": fam, "tint": c1.srgb_to_linear()}
+	if not materials.has(fam):
+		var m := ShaderMaterial.new()
+		m.shader = preload("res://shaders/env.gdshader")
+		m.set_shader_parameter("albedo", Color(1, 1, 1))
+		m.set_shader_parameter("albedo2", Color(0.8, 0.8, 0.84))
+		m.set_shader_parameter("noise_tex", Mats.NOISE)
+		for k in opts:
+			m.set_shader_parameter(k, opts[k])
+		materials[fam] = m
+	return materials[fam]
 
 
 func _tile_key(p: Vector3) -> String:
@@ -81,6 +100,10 @@ func box(center: Vector3, size: Vector3, mat: String, rot_y := 0.0, collide := t
 
 
 func _add_box_mesh(xf: Transform3D, size: Vector3, mat: String, shade_bottom: float) -> void:
+	var tint := Color.WHITE
+	if palette.has(mat):
+		tint = palette[mat].tint
+		mat = palette[mat].family
 	var st := _surface_tool(xf.origin, mat)
 	var h := size * 0.5
 	var faces := [
@@ -99,7 +122,7 @@ func _add_box_mesh(xf: Transform3D, size: Vector3, mat: String, shade_bottom: fl
 			# Vertex-colour ambient occlusion: darker toward the bottom of tall boxes.
 			var t = (p.y + h.y) / maxf(size.y, 0.001)
 			var c := lerpf(shade_bottom, 1.0, clampf(t * 3.0, 0.0, 1.0))
-			cols.append(Color(c, c, c))
+			cols.append(Color(c * tint.r, c * tint.g, c * tint.b))
 		var idx := [0, 1, 2, 0, 2, 3]
 		for i in idx:
 			st.set_normal(n)

@@ -25,6 +25,10 @@ func _ready() -> void:
 				"region": region = kv[1]
 				"out": out_dir = kv[1]
 				"script": script_name = kv[1]
+	if script_name == "flow":
+		await _run_flow()
+		get_tree().quit()
+		return
 	Save.delete(9)
 	Game.start_new_game()
 	Game.profile.flags["tutorial_city"] = true
@@ -73,6 +77,47 @@ func _run() -> void:
 	match script_name:
 		"base": await _run_base()
 		_: await _run_basic()
+
+
+func _run_flow() -> void:
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out_dir))
+	Save.delete(0)
+	get_tree().change_scene_to_file("res://src/boot/boot.tscn")
+	await wait(1.2)
+	await shot("boot_logo")
+	await wait(2.5)
+	await shot("boot_title")
+	var t0 := Time.get_ticks_msec()
+	while get_tree().current_scene == null or get_tree().current_scene.name != "MainMenu":
+		await get_tree().process_frame
+		if Time.get_ticks_msec() - t0 > 60000:
+			print("[test] FAIL main menu never shown")
+			return
+	print("[test] main menu reached after boot")
+	await wait(1.5)
+	await shot("main_menu")
+	get_tree().current_scene._start_new()
+	while get_tree().get_first_node_in_group("world") == null or not get_tree().get_first_node_in_group("world").ready_to_play:
+		await get_tree().process_frame
+	print("[test] world reached: ", Game.current_region, " mission ", Game.active_mission_id())
+	await wait(1.0)
+	await shot("world_start")
+	var w := get_tree().get_first_node_in_group("world")
+	w.open_menu()
+	await wait(0.4)
+	await shot("menu_missions")
+	w.menu._switch("heroes")
+	await wait(1.0)
+	await shot("menu_heroes")
+	w.menu._switch("base")
+	await wait(0.3)
+	await shot("menu_base")
+	w.menu._switch("options")
+	await wait(0.3)
+	await shot("menu_options")
+	w.menu.close()
+	await wait(0.3)
+	print("[test] paused after close: ", get_tree().paused, " save exists: ", Save.has_save())
 
 
 func press_interact(n: int, dt := 0.16) -> void:
@@ -148,7 +193,34 @@ func _run_basic() -> void:
 	await shot("no_particles")
 
 
+func report_breakdown() -> void:
+	var cats := {}
+	for mi in get_tree().root.find_children("*", "MeshInstance3D", true, false):
+		if not mi.is_visible_in_tree():
+			continue
+		var n: Node = mi
+		var cat := "other"
+		while n:
+			if n.name in ["Geometry", "Props", "Enemies", "Player", "CameraRig"]:
+				cat = n.name
+				break
+			n = n.get_parent()
+		var surf: int = mi.mesh.get_surface_count() if mi.mesh else 0
+		var passes := 0
+		for s in surf:
+			var m: Material = mi.get_active_material(s)
+			passes += 1 + (1 if m and m.next_pass else 0)
+		if not cats.has(cat):
+			cats[cat] = [0, 0]
+		cats[cat][0] += 1
+		cats[cat][1] += passes
+	var lights := get_tree().root.find_children("*", "OmniLight3D", true, false).filter(func(l): return l.is_visible_in_tree()).size()
+	var parts := get_tree().root.find_children("*", "CPUParticles3D", true, false).filter(func(l): return l.is_visible_in_tree()).size()
+	print("[perf] meshes by category [instances, surface passes]: ", cats, " omni lights: ", lights, " particle systems: ", parts)
+
+
 func report_perf() -> void:
+	report_breakdown()
 	print("[perf] draw calls=%d objects=%d primitives=%d vram=%.1fMB static_mem=%.1fMB" % [
 		Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
 		Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),
