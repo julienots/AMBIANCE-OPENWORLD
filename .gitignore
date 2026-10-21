@@ -1,0 +1,9 @@
+# Godot
+game/.godot/
+game/**/*.import.tmp
+*.translation
+# Build outputs
+build/
+tools/apksigner/build/
+__pycache__/
+*.pyc
