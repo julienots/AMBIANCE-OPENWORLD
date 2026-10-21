@@ -10,6 +10,35 @@ import humanoid as H
 from humanoid import (add_belt, add_boots, add_cape, add_emblem, add_gloves, add_head, add_limb_stripes,
                       add_mask_eyes, add_pecs, add_shoulder_pads, build_body, head_point)
 from rigkit import Character, box, cone, ellipsoid, merge, sw, torus, tube
+from mathutils import Vector
+
+
+def forearm_point(c, sg, f):
+    """Point at fraction f from elbow (0) to wrist (1) of the left (+1) or right (-1) arm, rest pose."""
+    e = c.joints["elbow_l" if sg > 0 else "elbow_r"].pos
+    w = c.joints["wrist_l" if sg > 0 else "wrist_r"].pos
+    p = e.lerp(w, f)
+    return (p.x, p.y, p.z)
+
+
+def forearm_blade(c, sg, length, width):
+    """Flat blade starting at the wrist and extending past the fist along the forearm axis."""
+    e = c.joints["elbow_l" if sg > 0 else "elbow_r"].pos
+    w = c.joints["wrist_l" if sg > 0 else "wrist_r"].pos
+    d = (w - e).normalized()
+    start = w - d * 0.12 + Vector((sg * 0.05, 0.02, 0))
+    pts = [start, start + d * length * 0.5, start + d * length]
+    return tube([tuple(p) for p in pts], [width, width * 0.8, 0.004], segs=4)
+
+
+def hand_claw(c, sg, offset, length):
+    """Hooked claw growing out of the knuckles, continuing the hand direction."""
+    w = c.joints["wrist_l" if sg > 0 else "wrist_r"].pos
+    h = c.joints["hand_l" if sg > 0 else "hand_r"].pos
+    d = (h - w).normalized()
+    base = h + Vector((offset * sg, -0.04, 0.0))
+    pts = [base, base + d * length * 0.6 + Vector((0, -0.03, 0)), base + d * length + Vector((0, -0.09, 0))]
+    return tube([tuple(p) for p in pts], [0.018, 0.012, 0.002], segs=5)
 
 STD_ANIMS = [("idle", 60, "idle", True), ("run", 20, "run", True), ("sprint", 16, "sprint", True),
              ("crouch", 36, "crouch", True), ("attack1", 16, "attack_r", False), ("attack2", 16, "attack_l", False),
@@ -94,8 +123,7 @@ def noctis():
         c.part(cone((x, 0.31, 0.6 - 0.04 * (i % 2)), 0.06, 0.0, 0.16, rot=(180, 0, 0), segs=4, scale=(1, 0.3, 1)), "chest", "cloak")
     add_pecs(c, "suit", 0.85)
     add_emblem(c, "metal_silver", "chevron", z=1.36)
-    c.part_m(lambda s: cone((s * 0.34, 0.04, 1.14), 0.03, 0.0, 0.38, rot=(168, s * -10, 0), segs=4,
-                            scale=(0.35, 1.0, 1.0)), "elbow", "glow_violet")
+    c.part_m(lambda s: forearm_blade(c, s, 0.55, 0.05), "wrist", "glow_violet", smooth=False)
     add_gloves(c, "mask")
     add_boots(c, "cloak")
     add_belt(c, "cloak", "metal_silver", "box")
@@ -159,8 +187,10 @@ def bastion():
     c.part_m(lambda s: box((s * 0.37, 0, 1.71), (0.12, 0.14, 0.045), rot=(0, s * -25, 0), bevel=0.015), "shoulder", "armor")
     c.part(box((0, -0.2, 1.4), (0.36, 0.08, 0.28), rot=(8, 0, 0), bevel=0.045), "chest", "armor")
     add_emblem(c, "glow_gold", "star", z=1.42, size=0.9)
-    c.part(box((0.5, -0.06, 1.05), (0.065, 0.46, 0.68), rot=(0, 8, 0), bevel=0.045), "elbow_l", "metal_steel")
-    c.part(box((0.535, -0.06, 1.05), (0.02, 0.32, 0.5), rot=(0, 8, 0), bevel=0.01), "elbow_l", "glow_gold")
+    sx, sy, sz = forearm_point(c, 1, 0.5)
+    c.part(box((sx + 0.13, sy - 0.03, sz), (0.07, 0.5, 0.74), rot=(0, 6, 0), bevel=0.045), "elbow_l", "metal_steel")
+    c.part(box((sx + 0.17, sy - 0.03, sz), (0.02, 0.38, 0.6), rot=(0, 6, 0), bevel=0.01), "elbow_l", "armor")
+    c.part(torus((sx + 0.185, sy - 0.03, sz), 0.1, 0.022, rot=(0, 90, 0), segs=20), "elbow_l", "glow_gold")
     add_gloves(c, "metal_steel", size=1.1)
     add_boots(c, "metal_steel", size=1.1)
     add_belt(c, "armor", "glow_gold", "box")
@@ -219,7 +249,8 @@ def porteur():
         pts = [(sx, 0.15, sz), (sx + d * 0.12, 0.3, sz + 0.1), (sx + d * 0.28, 0.42, sz + 0.12),
                (sx + d * 0.42, 0.5, sz + 0.05), (sx + d * 0.52, 0.55, sz - 0.08)]
         c.chain(f"tent{i}_", "chest", pts, [0.05, 0.042, 0.032, 0.022, 0.01], mat="symbiote")
-    c.part_m(lambda s: cone((s * 0.4, -0.06, 0.86), 0.015, 0.0, 0.1, rot=(150, 0, 0), segs=5), "wrist", "vein")
+    for k in range(3):
+        c.part_m(lambda sg, k=k: hand_claw(c, sg, (k - 1) * 0.03, 0.2), "wrist", "vein", smooth=False)
     add_gloves(c, "symbiote", cuff=False, size=1.1)
     add_boots(c, "symbiote", cuff=False)
     c.build()
