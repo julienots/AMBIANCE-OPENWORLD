@@ -39,15 +39,31 @@ const DEFAULT_LAYOUT := {
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fit_screen()
+	get_viewport().size_changed.connect(_fit_screen)
 	_font = preload("res://assets/fonts/LuckiestGuy-Regular.ttf")
 	for n in ["attack", "dodge", "interact", "crouch", "flashlight", "pause", "cycle", "map"]:
 		_icons[n] = load(ICON_DIR + n + ".png")
+	for it in DB.ITEMS:
+		_icons["item_" + it] = load(ICON_DIR + it + ".png")
 	Events.interaction_available.connect(func(p, _t): _interact_prompt = p)
 	Events.interaction_cleared.connect(func(_t): _interact_prompt = "")
 	Settings.changed.connect(_rebuild)
 	_rebuild()
+
+
+func _fit_screen() -> void:
+	## Under a CanvasLayer, anchors do not reliably give this control the screen size:
+	## size it explicitly so buttons and the joystick zone are always on screen.
+	position = Vector2.ZERO
+	size = get_viewport().get_visible_rect().size
+	queue_redraw()
+
+
+func _joy_home() -> Vector2:
+	var r := 80.0 * float(Settings.get_v("button_scale", 1.0))
+	return Vector2(r + 70.0, size.y - r - 70.0)
 
 
 func _rebuild() -> void:
@@ -134,9 +150,10 @@ func _touch_down(idx: int, p: Vector2) -> void:
 		return
 	if edit_mode:
 		return
-	if p.x < size.x * 0.42 and not _joy_active:
+	if p.x < size.x * 0.45 and p.y > size.y * 0.25 and not _joy_active:
 		_joy_active = true
-		_joy_origin = Vector2(clampf(p.x, 110, size.x * 0.42), clampf(p.y, size.y * 0.35, size.y - 110))
+		# Touching near the visible stick grabs it; elsewhere in the zone it re-centres under the thumb.
+		_joy_origin = _joy_home() if p.distance_to(_joy_home()) < 120.0 else Vector2(clampf(p.x, 100, size.x * 0.45), clampf(p.y, size.y * 0.3, size.y - 100))
 		_joy_pos = p
 		_touches[idx] = {"kind": "joy", "pos": p}
 		_update_joy()
@@ -216,6 +233,8 @@ func reset_layout() -> void:
 
 
 func _process(delta: float) -> void:
+	if size != get_viewport().get_visible_rect().size:
+		_fit_screen()
 	for idx in _touches:
 		var t: Dictionary = _touches[idx]
 		if t.kind == "button":
@@ -241,9 +260,17 @@ func _draw() -> void:
 		var knob := _joy_origin + (_joy_pos - _joy_origin).limit_length(r)
 		var sprint := Pad.move.length() > 0.97
 		draw_circle(knob, r * 0.42, Color(hero_col.r, hero_col.g, hero_col.b, (0.75 if sprint else 0.5) * a))
-	elif not edit_mode:
-		var hint := Vector2(size.x * 0.16, size.y - 140)
-		draw_arc(hint, 70, 0, TAU, 40, Color(1, 1, 1, 0.12 * a), 2.0, true)
+	else:
+		# Always-visible resting joystick.
+		var r := 80.0 * float(Settings.get_v("button_scale", 1.0))
+		var home := _joy_home()
+		draw_circle(home, r, Color(0, 0, 0, 0.3 * a))
+		draw_arc(home, r, 0, TAU, 48, Color(1, 1, 1, 0.45 * a), 3.0, true)
+		draw_circle(home, r * 0.42, Color(hero_col.r, hero_col.g, hero_col.b, 0.55 * a))
+		for k in 4:
+			var ang := k * PI / 2
+			var tip := home + Vector2(cos(ang), sin(ang)) * r * 0.78
+			draw_colored_polygon(PackedVector2Array([tip + Vector2(cos(ang), sin(ang)) * 8, tip + Vector2(cos(ang + 2.2), sin(ang + 2.2)) * 8, tip + Vector2(cos(ang - 2.2), sin(ang - 2.2)) * 8]), Color(1, 1, 1, 0.5 * a))
 	# Pause
 	var pc := Vector2(size.x - 46, 46)
 	draw_circle(pc, 26, Color(0, 0, 0, 0.4 * a))
@@ -314,7 +341,7 @@ func _draw_button(n: String, a: float, hero_col: Color) -> void:
 					label = str(Game.item_count(id))
 					draw_circle(c, r * (0.92 if pressed else 1.0), bg)
 					draw_arc(c, r, 0, TAU, 40, Color(0.9, 0.8, 0.3, 0.8 * a), 3.0, true)
-					_draw_tex(load(ICON_DIR + id + ".png"), c, r * 1.1, icon_col)
+					_draw_tex(_icons.get("item_" + id), c, r * 1.1, icon_col)
 					draw_string(_font, c + Vector2(r * 0.35, r * 0.95), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(1, 0.9, 0.4, a))
 					return
 		"item_next":

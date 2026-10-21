@@ -5,7 +5,7 @@ config_version=5
 
 config/name="SYMBIOTE: ABYSS"
 config/description="Action-aventure cartoon 3D, super-héros, survie horrifique et base souterraine."
-config/version="0.1.0"
+config/version="0.1.1"
 run/main_scene="res://src/boot/boot.tscn"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 boot_splash/bg_color=Color(0, 0, 0, 1)

@@ -3,10 +3,14 @@
 Jeu d'action-aventure cartoon 3D pour Android (Godot 4.5.1, rendu OpenGL ES 3).
 Super-héros, symbiotes horrifiques, monde ouvert et base souterraine creusable.
 
-## Version 0.1.0 — première version jouable (vertical slice)
+## Version 0.1.1 — première version jouable (vertical slice)
+
+0.1.1 : corrige l’absence de joystick et de boutons sur téléphone (le calque tactile avait une
+taille nulle) ; joystick désormais toujours visible ; icône d’objet corrigée ; test automatisé
+par événements tactiles réels (`tools/play_test.sh city touch`).
 
 ### Installer sur Android
-1. Copier `SymbioteAbyss-0.1.0.apk` sur le téléphone.
+1. Copier `SymbioteAbyss-0.1.1.apk` sur le téléphone.
 2. Autoriser l'installation d'applications de sources inconnues (Paramètres › Sécurité,
    ou à l'ouverture du fichier).
 3. Ouvrir l'APK et installer. Android 7.0 (API 24) ou plus récent, processeur ARM 32 ou 64 bits.
@@ -70,6 +74,7 @@ tools/build_apk.sh                # → dist/SymbioteAbyss-<version>.apk (vérif
 tools/play_test.sh city basic     # test automatisé jouable + captures d'écran
 tools/play_test.sh base base      # test creusement / construction / attaque
 tools/play_test.sh city flow      # démarrage → menu → partie → menus
+tools/play_test.sh city touch     # contrôles par vrais événements tactiles
 ```
 
 Polices : Luckiest Guy (Apache 2.0), Nunito (OFL). Tous les modèles, sons, musiques,

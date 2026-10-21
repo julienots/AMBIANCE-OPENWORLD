@@ -76,6 +76,7 @@ func hold_move(v: Vector2, t: float) -> void:
 func _run() -> void:
 	match script_name:
 		"base": await _run_base()
+		"touch": await _run_touch()
 		_: await _run_basic()
 
 
@@ -118,6 +119,62 @@ func _run_flow() -> void:
 	w.menu.close()
 	await wait(0.3)
 	print("[test] paused after close: ", get_tree().paused, " save exists: ", Save.has_save())
+
+
+func touch(idx: int, pos: Vector2, pressed: bool) -> void:
+	var e := InputEventScreenTouch.new()
+	e.index = idx
+	e.position = pos
+	e.pressed = pressed
+	Input.parse_input_event(e)
+
+
+func drag(idx: int, pos: Vector2, rel: Vector2) -> void:
+	var e := InputEventScreenDrag.new()
+	e.index = idx
+	e.position = pos
+	e.relative = rel
+	Input.parse_input_event(e)
+
+
+func _run_touch() -> void:
+	## Drives the game only through real screen-touch events, like a phone.
+	var w := get_tree().get_first_node_in_group("world")
+	var p: Node3D = w.player
+	var vs := get_viewport().get_visible_rect().size
+	print("[touch] viewport ", vs, " touch control size ", w.hud.touch.size, " pos ", w.hud.touch.position, " attack btn ", w.hud.touch._btn_center("attack"))
+	await wait(0.5)
+	await shot("touch_idle")
+	var start := p.global_position
+	var j := Vector2(170, vs.y - 170)
+	touch(0, j, true)
+	await wait(0.05)
+	for i in 10:
+		drag(0, j + Vector2(0, -8 * (i + 1)), Vector2(0, -8))
+		await wait(0.02)
+	await wait(0.3)
+	print("[touch] Pad.move during drag: ", Pad.move, " touch_active ", Pad.touch_active)
+	await shot("touch_joystick")
+	await wait(1.5)
+	touch(0, j + Vector2(0, -80), false)
+	await wait(0.2)
+	print("[touch] moved %.2f m with the joystick" % p.global_position.distance_to(start))
+	var yaw0: float = w.cam_rig.yaw
+	var c := Vector2(vs.x * 0.6, vs.y * 0.4)
+	touch(1, c, true)
+	for i in 10:
+		drag(1, c + Vector2(15 * (i + 1), 0), Vector2(15, 0))
+		await wait(0.02)
+	touch(1, c + Vector2(150, 0), false)
+	await wait(0.2)
+	print("[touch] camera yaw changed by %.1f deg" % (w.cam_rig.yaw - yaw0))
+	var ab: Vector2 = w.hud.touch._btn_center("attack")
+	var anim0: String = p.anim.current_animation
+	touch(2, ab, true)
+	await wait(0.05)
+	touch(2, ab, false)
+	await wait(0.1)
+	print("[touch] attack button -> player state %s anim %s (was %s)" % [p.state, p.anim.current_animation, anim0])
 
 
 func press_interact(n: int, dt := 0.16) -> void:
