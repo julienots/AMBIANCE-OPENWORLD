@@ -87,7 +87,7 @@ func delete(slot := 0) -> void:
 	if da == null:
 		return
 	for suffix in ["", ".bak", ".tmp"]:
-		var name := slot_path(slot).get_file() + suffix
+		var name = slot_path(slot).get_file() + suffix
 		if da.file_exists(name):
 			da.remove(name)
 

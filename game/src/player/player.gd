@@ -104,6 +104,14 @@ func _ready() -> void:
 	_shield_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(_shield_mesh)
 	last_safe_pos = global_position
+	# Soft fill light that keeps the hero readable in dark places (no shadows: cheap).
+	var fill := OmniLight3D.new()
+	fill.light_color = Color(0.75, 0.8, 1.0)
+	fill.light_energy = 0.55
+	fill.omni_range = 4.5
+	fill.position = Vector3(0, 2.2, 1.2)
+	fill.light_specular = 0.0
+	add_child(fill)
 
 
 func setup_hero(id: String) -> void:
@@ -125,6 +133,9 @@ func setup_hero(id: String) -> void:
 	model_root.add_child(model)
 	_mats = Mats.apply(model, true, id == "porteur")
 	Mats.set_param(_mats, "power_color", hero.color)
+	var skin: String = Game.hero_state(id).get("skin", "default") if not Game.profile.is_empty() else "default"
+	Mats.set_param(_mats, "hue_shift", {"default": 0.0, "eclipse": 0.0, "prisme": 2.2}[skin])
+	Mats.set_param(_mats, "skin_dark", 0.6 if skin == "eclipse" else 0.0)
 	anim = model.find_child("AnimationPlayer", true, false)
 	for n in LOOPS:
 		if anim.has_animation(n):
@@ -246,7 +257,7 @@ func _move(delta: float) -> void:
 		crouching = not crouching
 	if Pad.consume("flashlight"):
 		toggle_flashlight()
-	var want_sprint := (Pad.held("sprint_hold") or (Settings.get_v("auto_sprint", true) and mag > 0.96)) and not crouching
+	var want_sprint = (Pad.held("sprint_hold") or (Settings.get_v("auto_sprint", true) and mag > 0.96)) and not crouching
 	sprinting = want_sprint and stamina > 1.0 and mag > 0.3 and state == "move"
 	if sprinting:
 		stamina = maxf(0.0, stamina - delta * 20.0)
@@ -278,6 +289,7 @@ func _move(delta: float) -> void:
 	velocity += _ext_vel
 	_ext_vel = _ext_vel.move_toward(Vector3.ZERO, delta * 30.0)
 	move_and_slide()
+	_try_step_up(dir, mag)
 	# Facing
 	var face := Vector3.ZERO
 	if state in ["attack", "heavy", "action"] and current_target:
@@ -291,6 +303,24 @@ func _move(delta: float) -> void:
 	if global_position.y < -40.0:
 		global_position = last_safe_pos + Vector3.UP
 		velocity = Vector3.ZERO
+
+
+func _try_step_up(dir: Vector3, mag: float) -> void:
+	## Climbs ledges up to 1.1 m (dug tunnels, rubble) when pushing against them.
+	if not is_on_wall() or mag < 0.3 or state != "move" or not is_on_floor():
+		return
+	var fwd := dir.normalized() * 0.45
+	var raised := global_transform.translated(Vector3.UP * 1.1)
+	if test_move(global_transform, Vector3.UP * 1.1):
+		return
+	if test_move(raised, fwd):
+		return
+	var q := PhysicsRayQueryParameters3D.create(global_position + Vector3.UP * 1.15 + fwd, global_position + fwd + Vector3.UP * 0.05, Combat.LAYER_WORLD)
+	var hit := get_world_3d().direct_space_state.intersect_ray(q)
+	if hit.is_empty():
+		return
+	global_position = hit.position + Vector3.UP * 0.05
+	velocity.y = 0.0
 
 
 func move_heading() -> float:
@@ -384,7 +414,7 @@ func external_push(v: Vector3) -> void:
 
 func _update_target() -> void:
 	var dir := aim_direction() if Pad.move.length() < 0.2 else input_dir()
-	var keep := current_target and is_instance_valid(current_target) and current_target.alive \
+	var keep = current_target and is_instance_valid(current_target) and current_target.alive \
 		and current_target.global_position.distance_to(global_position) < 16.0
 	if not keep:
 		current_target = Combat.best_target(get_tree(), global_position, dir if dir.length() > 0.1 else facing(), 14.0, 140.0)
@@ -451,7 +481,7 @@ func _attack() -> void:
 		var dir := aim_direction()
 		var vel := dir * 26.0
 		if current_target:
-			var aimp := current_target.global_position + Vector3.UP * current_target.aim_height
+			var aimp = current_target.global_position + Vector3.UP * current_target.aim_height
 			vel = (aimp - muzzle_position()).normalized() * 26.0
 		Projectile.spawn(get_parent(), muzzle_position(), vel, {"owner_node": self, "mult": mult, "color": hero.color,
 			"status": prim.get("status", ""), "status_t": 3.0, "life": float(prim.range) / 26.0, "kind": "ranged"})

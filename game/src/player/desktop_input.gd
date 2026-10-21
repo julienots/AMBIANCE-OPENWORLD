@@ -5,6 +5,7 @@ extends Node
 
 var _mouse_attack_t := -1.0
 var _key_prev := {}
+var _wrote_move := false
 
 const KEYS := {
 	KEY_SPACE: "dodge", KEY_1: "ability1", KEY_2: "ability2", KEY_3: "ability3", KEY_R: "ultimate",
@@ -29,7 +30,13 @@ func _process(_delta: float) -> void:
 	if joy.length() > 0.2:
 		v = joy
 	var sprinting := Input.is_physical_key_pressed(KEY_SHIFT)
-	Pad.move = v.limit_length(1.0) * (1.0 if sprinting or joy.length() > 0.2 else 0.7)
+	# Only drive the stick while keys are used, so tests / touch can also write Pad.move.
+	if v.length() > 0.0:
+		Pad.move = v.limit_length(1.0) * (1.0 if sprinting or joy.length() > 0.2 else 0.7)
+		_wrote_move = true
+	elif _wrote_move:
+		Pad.move = Vector2.ZERO
+		_wrote_move = false
 	if sprinting:
 		Pad.press("sprint_hold")
 	else:

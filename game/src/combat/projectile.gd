@@ -75,7 +75,7 @@ func _physics_process(delta: float) -> void:
 		_finish(global_position)
 		return
 	if homing and is_instance_valid(homing) and homing.alive:
-		var want := (homing.global_position + Vector3.UP * homing.aim_height - global_position).normalized() * velocity.length()
+		var want = (homing.global_position + Vector3.UP * homing.aim_height - global_position).normalized() * velocity.length()
 		velocity = velocity.lerp(want, clampf(delta * 6.0, 0, 1))
 	var from := global_position
 	var to := from + velocity * delta

@@ -26,7 +26,7 @@ func _ready() -> void:
 	cm.bottom_radius = 0.06
 	cm.height = 0.3
 	mi.mesh = cm
-	var col := {"flare": Color(1, 0.2, 0.15), "decoy": Color(0.2, 0.8, 1), "smoke": Color(0.6, 0.6, 0.6), "mine": Color(1, 0.8, 0.1)}[kind]
+	var col = {"flare": Color(1, 0.2, 0.15), "decoy": Color(0.2, 0.8, 1), "smoke": Color(0.6, 0.6, 0.6), "mine": Color(1, 0.8, 0.1)}[kind]
 	mi.material_override = Mats.toon(col, 2.0)
 	add_child(mi)
 	if kind == "smoke":

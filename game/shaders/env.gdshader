@@ -55,7 +55,7 @@ void fragment() {
 		col = mix(col, vec3(0.05, 0.06, 0.09), win * 0.85);
 		float lit = step(1.0 - window_lit, h) * win;
 		float flick = 0.85 + 0.15 * sin(TIME * (2.0 + h * 6.0) + h * 30.0);
-		em += window_color.rgb * lit * 1.4 * flick;
+		em += window_color.rgb * lit * 0.55 * flick;
 	}
 	if (corruption > 0.0) {
 		float v = tri(wpos * 0.35, wnorm, 2);

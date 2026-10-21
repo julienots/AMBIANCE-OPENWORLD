@@ -24,7 +24,7 @@ void fragment() {
 	col = mix(col, vec3(lum), clamp(threat * 0.45 + hidden * 0.5, 0.0, 0.8) * strength);
 	col *= tint.rgb;
 	float vig = smoothstep(0.85, 0.25 - hidden * 0.15, r * (1.0 + threat * 0.35 + hidden * 0.6));
-	col *= mix(1.0, vig, 0.55 + 0.35 * strength);
+	col *= mix(1.0, vig, 0.25 + 0.3 * strength + threat * 0.3);
 	float pulse = 0.5 + 0.5 * sin(TIME * (3.0 + threat * 5.0));
 	col += vec3(0.6, 0.0, 0.05) * smoothstep(0.35, 0.8, r) * (damage + low_hp * pulse * 0.6) * strength;
 	float g = texture(grain_tex, uv * vec2(4.0, 2.4) + vec2(fract(TIME * 13.7), fract(TIME * 7.3))).r - 0.5;

@@ -74,7 +74,8 @@ func heard(pos: Vector3, source: Node, _dist: float) -> void:
 func _think(delta: float, player: Node3D) -> void:
 	match state:
 		"burrow", "burrow_idle":
-			if raid_mode and dig_target != Vector3.INF:
+			if raid_mode:
+				stop(delta)
 				return
 			if last_known == Vector3.ZERO:
 				stop(delta)
@@ -90,6 +91,17 @@ func _think(delta: float, player: Node3D) -> void:
 		"surfaced":
 			_surface_t += delta
 			stop(delta)
+			var bld := _nearest_building()
+			if bld and (player == null or player.global_position.distance_to(global_position) > 9.0):
+				face_towards(bld.global_position, delta, 4.0)
+				if bld.global_position.distance_to(global_position) > 3.0:
+					play_anim("move")
+					move_to(bld.global_position, speed, delta)
+				elif _attack_cd <= 0.0 and _attack_phase == "":
+					_bld_target = bld
+					start_attack()
+				_surface_t = minf(_surface_t, 2.0)
+				return
 			if player and _surface_t > 0.8:
 				face_towards(player.global_position, delta, 4.0)
 				var d := global_position.distance_to(player.global_position)
@@ -105,6 +117,32 @@ func _think(delta: float, player: Node3D) -> void:
 					last_known = Vector3.ZERO
 					_go_under()
 			Audio.request_state("combat", 2.0)
+
+
+var _bld_target: Node3D
+
+
+func _nearest_building() -> Node3D:
+	if not raid_mode and not has_meta("path"):
+		return null
+	var best: Node3D = null
+	var bd := 30.0
+	for b in get_tree().get_nodes_in_group("base_building"):
+		if b.broken():
+			continue
+		var d = b.global_position.distance_to(global_position)
+		if d < bd:
+			bd = d
+			best = b
+	return best
+
+
+func _attack_hit(player: Node3D) -> void:
+	if _bld_target and is_instance_valid(_bld_target):
+		_bld_target.take_damage({"amount": float(data.dmg) * 1.5})
+		_bld_target = null
+		return
+	super._attack_hit(player)
 
 
 func windup_time() -> float:

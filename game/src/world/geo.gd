@@ -97,7 +97,7 @@ func _add_box_mesh(xf: Transform3D, size: Vector3, mat: String, shade_bottom: fl
 		var cols := []
 		for p in v:
 			# Vertex-colour ambient occlusion: darker toward the bottom of tall boxes.
-			var t := (p.y + h.y) / maxf(size.y, 0.001)
+			var t = (p.y + h.y) / maxf(size.y, 0.001)
 			var c := lerpf(shade_bottom, 1.0, clampf(t * 3.0, 0.0, 1.0))
 			cols.append(Color(c, c, c))
 		var idx := [0, 1, 2, 0, 2, 3]

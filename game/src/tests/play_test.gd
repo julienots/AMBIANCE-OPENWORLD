@@ -13,6 +13,11 @@ var _errors := 0
 
 
 func _ready() -> void:
+	# Survive the scene change triggered by Loader.goto_world.
+	if get_parent() != get_tree().root:
+		reparent.call_deferred(get_tree().root)
+		await get_tree().process_frame
+		await get_tree().process_frame
 	for a in OS.get_cmdline_user_args():
 		var kv := a.split("=")
 		if kv.size() == 2:
@@ -65,6 +70,59 @@ func hold_move(v: Vector2, t: float) -> void:
 
 
 func _run() -> void:
+	match script_name:
+		"base": await _run_base()
+		_: await _run_basic()
+
+
+func press_interact(n: int, dt := 0.16) -> void:
+	for i in n:
+		Pad.press("interact")
+		await wait(dt)
+
+
+func _run_base() -> void:
+	var w := get_tree().get_first_node_in_group("world")
+	var p: Node3D = w.player
+	var base = w.get_meta("base")
+	for k in ["metal", "materials", "crystal", "electronics"]:
+		Game.add_res(k, 60, true)
+	await wait(0.8)
+	await shot("base_spawn")
+	# Face east toward the rock and dig a tunnel.
+	p._heading = -PI / 2
+	var before: int = Game.profile.stats.dug
+	for cell in 5:
+		await press_interact(14)
+		await hold_move(Vector2(1, 0), 0.6)
+	print("[test] dug cells: ", Game.profile.stats.dug - before, " player ", p.global_position)
+	await shot("base_dug")
+	p._heading = PI / 2
+	base.start_placement("generator")
+	await wait(0.5)
+	print("[test] placement prompt: ", base.build_ctl.get_prompt(p))
+	Pad.press("interact")
+	await wait(0.5)
+	print("[test] buildings: ", Game.buildings().size(), " power ", Game.power_balance())
+	base.start_placement("command")
+	p._heading = 0.0
+	await wait(0.5)
+	print("[test] placement prompt 2: ", base.build_ctl.get_prompt(p))
+	Pad.press("interact")
+	await wait(0.5)
+	print("[test] buildings: ", Game.buildings().size(), " power ", Game.power_balance())
+	await shot("base_built")
+	base.raid.start(2)
+	print("[test] raid diggers: ", base.raid.diggers.size())
+	await wait(15.0)
+	for d in base.raid.diggers:
+		if is_instance_valid(d):
+			print("[test] digger at ", d.global_position, " path left ", d.get_meta("path").size(), " state ", d.state)
+	await shot("base_raid")
+	report_perf()
+
+
+func _run_basic() -> void:
 	var w := get_tree().get_first_node_in_group("world")
 	var p: Node3D = w.player
 	print("[test] player at ", p.global_position, " hero ", p.hero_id, " fps ", Engine.get_frames_per_second())
@@ -84,3 +142,16 @@ func _run() -> void:
 	await wait(0.6)
 	await shot("combat")
 	print("[test] enemies alive: ", Combat.enemies(get_tree()).size(), " fps ", Engine.get_frames_per_second())
+	report_perf()
+	for n in get_tree().root.find_children("*", "CPUParticles3D", true, false):
+		n.visible = false
+	await shot("no_particles")
+
+
+func report_perf() -> void:
+	print("[perf] draw calls=%d objects=%d primitives=%d vram=%.1fMB static_mem=%.1fMB" % [
+		Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
+		Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),
+		Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME),
+		Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0,
+		Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0])

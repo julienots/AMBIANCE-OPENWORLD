@@ -223,10 +223,10 @@ func play_music(name: String, fade := 1.5) -> void:
 	_music_cur = name
 	var old := _music_a if _music_a.playing and _music_a.volume_db > -40 else _music_b
 	var new := _music_b if old == _music_a else _music_a
-	var tw := create_tween().set_parallel(true)
 	if old.playing:
+		var tw := create_tween()
 		tw.tween_property(old, "volume_db", -80.0, fade)
-		tw.chain().tween_callback(old.stop)
+		tw.tween_callback(old.stop)
 	if name == "":
 		return
 	var st: AudioStream = load("%s/%s.ogg" % [MUSIC_DIR, name])

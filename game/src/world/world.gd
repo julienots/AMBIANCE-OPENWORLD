@@ -78,6 +78,9 @@ func _ready() -> void:
 	Loader.set_progress(0.9, "Réveil des symbiotes…")
 	await get_tree().process_frame
 	_spawn_player()
+	# The navigation map only reflects the new navmesh after a physics sync.
+	for i in 3:
+		await get_tree().physics_frame
 	_initial_spawns()
 	if region.has_method("post_spawn"):
 		region.post_spawn(self)
@@ -236,7 +239,7 @@ func _update_objective_marker() -> void:
 	var id := Game.active_mission_id()
 	if DB.MISSIONS[id].region != region_id and region_id != "base":
 		# Point toward the gate leading to the mission region.
-		var gate_tag := "gate_" + DB.MISSIONS[id].region
+		var gate_tag = "gate_" + DB.MISSIONS[id].region
 		if markers.has(gate_tag):
 			hud.objective_pos = markers[gate_tag]
 		return
@@ -267,7 +270,7 @@ func add_marker(tag: String, pos: Vector3, multi := false) -> void:
 func store_player_state() -> void:
 	if player == null or not player.alive:
 		return
-	var p := player.global_position if player.state != "hidden" else player.hiding_spot.exit_position()
+	var p = player.global_position if player.state != "hidden" else player.hiding_spot.exit_position()
 	Game.profile.player.pos = [p.x, p.y, p.z]
 	Game.profile.player.hp = player.hp
 	Game.profile.player.region = region_id

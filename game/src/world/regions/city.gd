@@ -22,8 +22,8 @@ func build(world: Node3D) -> void:
 	w.bounds = AABB(Vector3(-150, -12, -150), Vector3(300, 80, 300))
 	w.configure_env({
 		"top_color": Color(0.02, 0.025, 0.06), "horizon_color": Color(0.2, 0.11, 0.15), "glow_color": Color(0.55, 0.16, 0.12),
-		"fog_color": Color(0.09, 0.07, 0.1), "fog_density": 0.012, "ambient": Color(0.32, 0.3, 0.45), "ambient_energy": 0.55,
-		"sun_color": Color(0.6, 0.65, 0.95), "sun_energy": 0.55, "sun_rot": Vector3(-42, 30, 0), "visibility": 0.55,
+		"fog_color": Color(0.09, 0.07, 0.1), "fog_density": 0.012, "ambient": Color(0.42, 0.4, 0.58), "ambient_energy": 0.8,
+		"sun_color": Color(0.7, 0.75, 1.0), "sun_energy": 0.8, "sun_rot": Vector3(-42, 30, 0), "visibility": 0.55,
 		"fog_layers": 2, "ground_fog_color": Color(0.32, 0.28, 0.34), "ground_fog_density": 0.22, "ground_fog_height": 0.3,
 		"motes": Color(1.0, 0.55, 0.3, 0.6), "motes_amount": 30, "motes_size": 0.06,
 		"ambient_sounds": ["distant_scream", "metal_creak", "crawler_chitter", "distant_alarm", "wind_gust"],
@@ -163,7 +163,7 @@ func _plaza() -> void:
 func _contaminated_block() -> void:
 	var c := block_center(0, 4)
 	for li in 3:
-		var lp := c + [Vector3(-10, 0, -10), Vector3(10, 0, -10), Vector3(-10, 0, 10)][li]
+		var lp = c + [Vector3(-10, 0, -10), Vector3(10, 0, -10), Vector3(-10, 0, 10)][li]
 		building(lp, Vector3(15, rng.randf_range(14, 30), 15), "bld_corrupt", {"broken": true})
 	goo_patch(c + Vector3(8, 0, 8), 9.0, 7.0)
 	goo_patch(c + Vector3(-14, 0, 18), 5.0, 6.0)

@@ -14,6 +14,7 @@ var _shake_t := 0.0
 var override_transform := false   # hiding spots / executions drive the camera directly
 var fov_base := 62.0
 var mode := "explore"             # explore | combat | interior | aim
+var _shoulder := 0.0
 
 @onready var pitch_node: Node3D = $Pitch
 @onready var arm: SpringArm3D = $Pitch/Arm
@@ -57,14 +58,24 @@ func _process(delta: float) -> void:
 		"interior": _want_dist = 3.8
 		"aim": _want_dist = 3.2
 		_: _want_dist = 5.2
-	# Tight spaces: shorten when a ceiling is low above the player.
-	if _ceiling_low():
-		_want_dist = minf(_want_dist, 3.6)
+	# Tight spaces: lower, flatter, over-the-shoulder framing.
+	var low := _ceiling_low()
+	var pivot_h := 1.55
+	var eff_pitch := pitch
+	if low:
+		_want_dist = minf(_want_dist, 3.4)
+		pivot_h = 1.3
+		eff_pitch = clampf(pitch, -12.0, 10.0)
+	_shoulder = 0.0
 	distance = lerpf(distance, _want_dist, delta * 3.0)
 	arm.spring_length = distance
-	global_position = global_position.lerp(target.global_position + Vector3(0, 1.55, 0), clampf(delta * 12.0, 0, 1))
+	arm.position.x = _shoulder
+	global_position = global_position.lerp(target.global_position + Vector3(0, pivot_h, 0), clampf(delta * 12.0, 0, 1))
 	rotation_degrees.y = yaw
-	pitch_node.rotation_degrees.x = pitch
+	pitch_node.rotation_degrees.x = lerpf(pitch_node.rotation_degrees.x, eff_pitch, clampf(delta * 8.0, 0, 1))
+	# Hide the hero when the camera is pushed into it by walls.
+	if target.get("visual") and target.state != "hidden":
+		target.visual.visible = arm.get_hit_length() > 1.1
 	var sprinting: bool = target.get("sprinting") == true
 	cam.fov = lerpf(cam.fov, fov_base + (7.0 if sprinting else 0.0), delta * 4.0)
 	# Shake
@@ -81,7 +92,7 @@ func _process(delta: float) -> void:
 func _ceiling_low() -> bool:
 	var space := get_world_3d().direct_space_state
 	var from := target.global_position + Vector3(0, 1.0, 0)
-	var q := PhysicsRayQueryParameters3D.create(from, from + Vector3(0, 2.4, 0), 1)
+	var q := PhysicsRayQueryParameters3D.create(from, from + Vector3(0, 3.2, 0), 1)
 	return not space.intersect_ray(q).is_empty()
 
 

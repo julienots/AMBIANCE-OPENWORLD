@@ -121,7 +121,7 @@ func _physics_process(delta: float) -> void:
 			if not contains(e.global_position):
 				continue
 			if pull != 0.0 and e.can_be_moved():
-				var to := global_position - e.global_position
+				var to = global_position - e.global_position
 				to.y = 0
 				e.external_push(to.normalized() * pull)
 			if hide_player:

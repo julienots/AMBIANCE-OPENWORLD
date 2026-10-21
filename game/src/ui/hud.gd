@@ -9,10 +9,9 @@ var player: Node
 var touch: Control
 var _post: ColorRect
 var _post_mat: ShaderMaterial
-var _hp_bar: ProgressBar
-var _hp_ghost: ProgressBar
-var _en_bar: ProgressBar
-var _st_bar: ProgressBar
+var _hp_bar: StatBar
+var _en_bar: StatBar
+var _st_bar: StatBar
 var _hero_label: Label
 var _level_label: Label
 var _obj_title: Label
@@ -125,6 +124,7 @@ func _bar(col: Color, w: float, h: float) -> ProgressBar:
 	b.custom_minimum_size = Vector2(w, h)
 	b.size = Vector2(w, h)
 	b.show_percentage = false
+	b.add_theme_font_size_override("font_size", 1)
 	var fill := StyleBoxFlat.new()
 	fill.bg_color = col
 	fill.set_corner_radius_all(int(h / 2))
@@ -152,16 +152,13 @@ func _build_vitals() -> void:
 	_level_label.add_theme_font_size_override("font_size", 15)
 	_level_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.9))
 	box.add_child(_level_label)
-	_hp_ghost = _bar(Color(1, 1, 1, 0.5), 300, 18)
-	_hp_ghost.position = Vector2(0, 56)
-	box.add_child(_hp_ghost)
-	_hp_bar = _bar(Color(0.25, 0.95, 0.45), 300, 18)
+	_hp_bar = StatBar.new(Color(0.25, 0.95, 0.45), 300, 18)
 	_hp_bar.position = Vector2(0, 56)
 	box.add_child(_hp_bar)
-	_en_bar = _bar(Color(0.3, 0.75, 1.0), 240, 11)
+	_en_bar = StatBar.new(Color(0.3, 0.75, 1.0), 240, 11)
 	_en_bar.position = Vector2(0, 80)
 	box.add_child(_en_bar)
-	_st_bar = _bar(Color(1.0, 0.85, 0.3), 180, 7)
+	_st_bar = StatBar.new(Color(1.0, 0.85, 0.3), 180, 7)
 	_st_bar.position = Vector2(0, 97)
 	box.add_child(_st_bar)
 
@@ -356,8 +353,6 @@ func _process(delta: float) -> void:
 	if player:
 		_hp_bar.max_value = player.max_hp
 		_hp_bar.value = player.hp
-		_hp_ghost.max_value = player.max_hp
-		_hp_ghost.value = maxf(player.hp, move_toward(_hp_ghost.value, player.hp, delta * 30.0))
 		_en_bar.max_value = player.max_energy
 		_en_bar.value = player.energy
 		_st_bar.max_value = player.max_stamina
@@ -398,7 +393,7 @@ func _draw_compass() -> void:
 	if cam == null:
 		return
 	var w := _compass.size.x
-	var to := objective_pos - player.global_position
+	var to = objective_pos - player.global_position
 	var dist := Vector2(to.x, to.z).length()
 	var fwd := -cam.global_transform.basis.z
 	var ang := atan2(fwd.x * to.z - fwd.z * to.x, fwd.x * to.x + fwd.z * to.z)

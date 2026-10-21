@@ -14,7 +14,7 @@ static func enemies(tree: SceneTree) -> Array:
 static func in_radius(tree: SceneTree, pos: Vector3, r: float) -> Array:
 	var out: Array = []
 	for e in enemies(tree):
-		var d := (e.global_position - pos)
+		var d = (e.global_position - pos)
 		d.y *= 0.5
 		if d.length() <= r + e.hit_radius:
 			out.append(e)

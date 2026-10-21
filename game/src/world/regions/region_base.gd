@@ -159,7 +159,7 @@ func _shop(pos: Vector3, size: Vector3, mat: String, opts: Dictionary) -> void:
 
 
 func car(pos: Vector3, rot: float, color_mat := "", wrecked := false) -> void:
-	var m := color_mat if color_mat != "" else ["car_red", "car_blue", "car_white", "car_yellow", "car_green", "car_black"][rng.randi() % 6]
+	var m = color_mat if color_mat != "" else ["car_red", "car_blue", "car_white", "car_yellow", "car_green", "car_black"][rng.randi() % 6]
 	var b := Basis(Vector3.UP, rot)
 	var tilt := rng.randf_range(-0.06, 0.06) if wrecked else 0.0
 	geo.box(pos + b * Vector3(0, 0.7, 0), Vector3(1.9, 0.75, 4.3), m, rot, true, "metal", 0.85, tilt)
